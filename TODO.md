@@ -28,6 +28,18 @@ Working notes for the assignment. Not graded — my own tracker.
 - [ ] Disable thinking on 30B too (Qwen3 thinking model). on/off is a P1 latency
       tradeoff AND a P6 lever — worth measuring.
 
+## Local eval finding (qwen3:8b, NOT a deliverable)
+
+Full 30-q run on ollama: overall 0.233 (7/30), per-iteration [0.233, 0.233, 0.233].
+- 12 questions fired revise (>1 iter), **0 changed correctness** → loop adds zero
+  value on 8B. 18 stopped at iter1 (verify ok), 11 hit the cap (3 iters), 1 at iter2.
+- Harness verified correct. Real verify→revise value verdict must come from 30B.
+- If 30B also shows flat per-iteration: dig into whether verify is too lenient
+  (passes wrong answers) or revise just can't fix on this model. That analysis IS
+  the Phase 5/7 "did the loop earn its keep" writeup.
+- Saved to results/eval_local_qwen3-8b.json (delete or keep as a local reference;
+  real baseline = results/eval_baseline.json from 30B).
+
 ## Phase progress
 
 - [x] Phase 0 — setup, docker stack up (killed stale `mlops-hw-2` stack on :9090)
