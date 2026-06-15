@@ -57,8 +57,55 @@ def matches(gold_rows: list[tuple] | None, pred_rows: list[tuple] | None) -> boo
 # ---------- Implement these (Phase 5) ----------------------------------
 
 def eval_one(question: dict, agent_url: str) -> dict:
-    """Score one question. Return a dict capturing per-iteration correctness."""
-    raise NotImplementedError("Phase 5")
+    """Score one question. Return a dict capturing per-iteration correctness.
+
+    Calls the agent, then scores execution accuracy *independently*: we run the
+    gold SQL and each iteration's candidate SQL ourselves against the DB and
+    compare canonicalized row sets. Candidates come from the agent's history
+    (generate_sql = iteration 1, each revise bumps the iteration), so
+    per_iteration[k-1] is "was the query correct after k generate/revise calls".
+    """
+    db_id = question["db_id"]
+    gold_sql = question["gold_sql"]
+    gold_ok, gold_rows, gold_err = run_sql(db_id, gold_sql)
+
+    t0 = time.monotonic()
+    try:
+        resp = httpx.post(
+            agent_url,
+            json={"question": question["question"], "db": db_id},
+            timeout=300.0,
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        agent_error = None
+    except Exception as e:  # noqa: BLE001
+        payload = {"sql": "", "iterations": 0, "history": []}
+        agent_error = f"{type(e).__name__}: {e}"
+    latency = time.monotonic() - t0
+
+    # Each history entry with a "sql" key is one iteration's candidate query.
+    candidates = [h["sql"] for h in payload.get("history", []) if "sql" in h]
+    per_iteration: list[bool] = []
+    for sql in candidates:
+        pred_ok, pred_rows, _ = run_sql(db_id, sql)
+        per_iteration.append(gold_ok and pred_ok and matches(gold_rows, pred_rows))
+
+    final_correct = per_iteration[-1] if per_iteration else False
+
+    return {
+        "db_id": db_id,
+        "question": question["question"],
+        "gold_sql": gold_sql,
+        "gold_ok": gold_ok,
+        "gold_error": gold_err,
+        "final_sql": payload.get("sql", ""),
+        "iterations": payload.get("iterations", len(candidates)),
+        "per_iteration": per_iteration,
+        "final_correct": final_correct,
+        "latency_seconds": latency,
+        "agent_error": agent_error,
+    }
 
 
 def summarize(results: list[dict]) -> dict:
