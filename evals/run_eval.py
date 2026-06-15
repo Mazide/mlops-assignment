@@ -117,7 +117,38 @@ def summarize(results: list[dict]) -> dict:
     The agent stopped emitting; whatever it had at termination is what
     would have been served had we polled at iteration k.
     """
-    raise NotImplementedError("Phase 5")
+    n = len(results)
+    if n == 0:
+        return {"n": 0, "overall_pass_rate": 0.0, "per_iteration_pass_rate": []}
+
+    max_iters = max((len(r["per_iteration"]) for r in results), default=0)
+
+    # Per-iteration pass rate with carry-forward: a question that stopped at
+    # iteration j contributes its last (j-th) result to every k > j.
+    per_iter_rates: list[float] = []
+    for k in range(max_iters):
+        hits = 0
+        for r in results:
+            pi = r["per_iteration"]
+            if not pi:
+                continue
+            idx = k if k < len(pi) else len(pi) - 1  # carry forward last
+            if pi[idx]:
+                hits += 1
+        per_iter_rates.append(hits / n)
+
+    overall = sum(1 for r in results if r["final_correct"]) / n
+    latencies = [r["latency_seconds"] for r in results if r.get("latency_seconds")]
+    gold_failures = [r["db_id"] for r in results if not r.get("gold_ok", True)]
+
+    return {
+        "n": n,
+        "overall_pass_rate": overall,
+        "per_iteration_pass_rate": per_iter_rates,
+        "max_iterations_observed": max_iters,
+        "mean_latency_seconds": (sum(latencies) / len(latencies)) if latencies else 0.0,
+        "gold_sql_failures": gold_failures,
+    }
 
 
 # ---------- Main (provided) --------------------------------------------
