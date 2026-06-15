@@ -32,6 +32,9 @@ Working notes for the assignment. Not graded — my own tracker.
 
 - [x] Phase 0 — setup, docker stack up (killed stale `mlops-hw-2` stack on :9090)
 - [x] Phase 3 — graph wired (verify/revise/router + prompts), smoke-tested on ollama
+- [x] Phase 5 (harness) — eval_one + summarize done, end-to-end tested on ollama.
+      Real numbers must come from 30B on H100. Note: verify rarely fires revise on
+      8B (max_iters=1 in mini run) — loop value shows on hard Qs / real model.
 - [ ] Phase 1 — vLLM serving 30B on H100, pick flags + justify in REPORT (15%)
 - [ ] Phase 2 — Grafana: latency/throughput/KV-cache panels reacting to load (15%)
       - local option: CPU-vLLM + Qwen3-0.6B (ollama gives no /metrics)
@@ -45,7 +48,7 @@ Working notes for the assignment. Not graded — my own tracker.
 - [ ] REPORT.md (≤3 pages)
 - [ ] infra/grafana/.../serving.json (all required panels)
 - [x] agent/graph.py, agent/prompts.py
-- [ ] evals/run_eval.py
+- [x] evals/run_eval.py
 - [ ] results/eval_baseline.json, results/eval_after_tuning.json
 - [ ] screenshots: vllm_manual_query, grafana_serving, langfuse_trace,
       langfuse_tags, grafana_eval_run, grafana_before, grafana_after
