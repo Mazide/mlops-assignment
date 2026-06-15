@@ -13,6 +13,22 @@ Working notes for the assignment. Not graded — my own tracker.
       - **Phase 6 lever:** guided decoding costs a bit of throughput/latency in vLLM.
         Measure "verify with structured output vs without" as one tuning iteration.
 
+## Phase 1 / vLLM bring-up notes (H100)
+
+- **OOM on default config.** Out of the box vLLM picks `max_model_len 262144`
+  (256K). 30B weights eat ~60GB of the 80GB H100, KV cache for 256K context
+  blows the remaining ~20GB → crash on startup. Fix in `start_vllm.sh`:
+  - `--max-model-len 32768` — BIRD schema + question fit easily; shorter context
+    buys KV room. (REPORT justification: less max-len → less KV → no OOM.)
+  - `--gpu-memory-utilization 0.90` — give vLLM 90% of the card.
+- **HF_TOKEN** wasn't reaching vLLM — start_vllm.sh runs vLLM directly and does
+  NOT load .env. Script now sources .env (set -a) so HF_TOKEN exports. Without it:
+  unauthenticated HF downloads (slower / rate-limited).
+- **Docker perm denied** (`docker.sock permission denied`) — user not in docker
+  group. Fix: `sudo usermod -aG docker $USER && newgrp docker`.
+- Flags above are a STARTING point. Phase 6: tune them (max-num-seqs, max-len,
+  thinking on/off, quant) and log what moved which metric.
+
 ## Local → VM carry-over (don't forget on H100)
 
 - [ ] Revert `.env` to defaults: `VLLM_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507`,
