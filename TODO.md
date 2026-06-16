@@ -35,6 +35,14 @@ Working notes for the assignment. Not graded — my own tracker.
 - **FlashInfer not installed** → vLLM falls back to PyTorch-native top-p/top-k
   sampling. Installing flashinfer speeds sampling = a Phase 6 perf lever worth
   measuring (latency/throughput before vs after).
+- **`Python.h: No such file or directory` on startup** — weights load fine (no
+  OOM), crash is at torch.compile: inductor → triton JITs `cuda_utils.c` via gcc
+  at runtime and needs Python C-API headers, which a bare VM lacks (the
+  `python3.12` package ships the interpreter, not the `.h` dev headers).
+  - Fix (root cause): `sudo apt-get install -y python3.12-dev` — puts `Python.h`
+    in `/usr/include/python3.12/` so triton's gcc call compiles.
+  - Fallback: `--enforce-eager` disables torch.compile → no triton/gcc → starts
+    without headers, but loses compile speedup. "eager vs compiled" = a P6 lever.
 
 ## Local → VM carry-over (don't forget on H100)
 
