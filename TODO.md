@@ -28,6 +28,13 @@ Working notes for the assignment. Not graded — my own tracker.
   group. Fix: `sudo usermod -aG docker $USER && newgrp docker`.
 - Flags above are a STARTING point. Phase 6: tune them (max-num-seqs, max-len,
   thinking on/off, quant) and log what moved which metric.
+- **transformers 5.x breaks vLLM 0.10.2** (`Qwen2Tokenizer has no attribute
+  all_special_tokens_extended`). Must pin `transformers>=4.56,<5` in pyproject
+  AND `uv lock && uv sync` — `uv run` re-syncs to lock, so pip install alone
+  gets reverted. The pin must be in the VM's pyproject (was missing there).
+- **FlashInfer not installed** → vLLM falls back to PyTorch-native top-p/top-k
+  sampling. Installing flashinfer speeds sampling = a Phase 6 perf lever worth
+  measuring (latency/throughput before vs after).
 
 ## Local → VM carry-over (don't forget on H100)
 
