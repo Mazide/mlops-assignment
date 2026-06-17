@@ -19,8 +19,10 @@ def db_path(db_id: str) -> Path:
     return DB_DIR / f"{db_id}.sqlite"
 
 
-def _q(ident: str) -> str:
+def _q(ident: str | None) -> str:
     """Double-quote a SQL identifier, escaping any embedded quotes."""
+    if ident is None:
+        return '""'
     return '"' + ident.replace('"', '""') + '"'
 
 
